@@ -5,16 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tea Timer</title>
     <style>
+        :root {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --progress-bg: #2a2a2a;
+        }
+
+        :root[data-theme="light"] {
+            --bg-color: #f0f0f0;
+            --container-bg: #ffffff;
+            --text-color: #121212;
+            --progress-bg: #e0e0e0;
+        }
+
         html {
-            background: #121212;
+            background: var(--bg-color);
+            transition: background 0.3s ease;
         }
         .progress-bar {
             width: 100%;
             height: 20px;
-            background-color: #2a2a2a;
+            background-color: var(--progress-bg);
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         .progress {
             width: 100%;
@@ -35,10 +50,12 @@
             margin: 50px auto;
             text-align: center;
             padding: 20px;
-            background-color: #1e1e1e;
+            background-color: var(--container-bg);
             border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            color: #e0e0e0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            position: relative;
         }
         button {
             background-color: #4CAF50;
@@ -81,7 +98,7 @@
             background-repeat: no-repeat;
             font-size: inherit;
             font-weight: inherit;
-            color: #e0e0e0;
+            color: var(--text-color);
             width: 60px;
             padding: 0 20px 0 0;
             margin: 0;
@@ -94,6 +111,23 @@
         #brew-number:focus {
             outline: none;
             box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+        }
+        #theme-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: transparent;
+            border: 2px solid #4CAF50;
+        }
+        #theme-toggle:hover {
+            background-color: rgba(76, 175, 80, 0.1);
         }
     </style>
     <script>
@@ -121,6 +155,7 @@
                 if (timeLeft <= 0) {
                     clearInterval(timer);
                     initializeTimer();
+                    playSound();
                 }
             }, 1000);
             runCounter++;
@@ -140,10 +175,46 @@
             runCounter = parseInt(select.value) - 1;
             initializeTimer();
         }
+        // Read theme from localStorage on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                document.getElementById('theme-icon').textContent = savedTheme === 'light' ? '🌙' : '☀️';
+            }
+        });
+        function toggleTheme() {
+            const root = document.documentElement;
+            const currentTheme = root.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            root.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            const icon = document.getElementById('theme-icon');
+            icon.textContent = newTheme === 'light' ? '🌙' : '☀️';
+        }
+
+        function playSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(442, audioContext.currentTime); // A4 note
+            
+            gainNode.gain.setValueAtTime(0.7, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 1);
+        }
     </script>
 </head>
 <body>
     <div class="container">
+        <button id="theme-toggle" onclick="toggleTheme()"><span id="theme-icon">☀️</span></button>
         <h1>Tea Timer</h1>
         <h2>Brewing: <select id="brew-number" onchange="handleBrewNumberChange(this)">
             <option>1</option>
