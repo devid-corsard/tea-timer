@@ -192,7 +192,15 @@
         }
 
         function playSound() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            let audioContext;
+            // iOS requires audio context to be created from a user gesture
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                // iOS specific resume
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
             
