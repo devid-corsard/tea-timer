@@ -135,6 +135,7 @@
         let initialTime = 30;
         let timeAdded = 15;
         let runCounter = 0;
+        let audioContext = null;
         
         function initializeTimer() {
             clearInterval(timer);
@@ -144,6 +145,10 @@
         }
 
         function startTimer() {
+            // Initialize audio context on first user interaction
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
             initializeTimer();
             
             timer = setInterval(() => {
@@ -192,15 +197,15 @@
         }
 
         function playSound() {
-            let audioContext;
-            // iOS requires audio context to be created from a user gesture
             if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                // iOS specific resume
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
+                return; // Exit if audio context isn't initialized
             }
+
+            // Resume audio context if it's suspended
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
             
